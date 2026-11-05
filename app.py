@@ -134,8 +134,13 @@ members = [m['name'] for m in rows('SELECT name FROM members WHERE family=? ORDE
 today = datetime.now(TZ).date()
 
 st.markdown('''<style>
-.block-container{max-width:580px;padding:0.8rem 0.8rem 1rem}
-h1{font-size:1.55rem!important;padding:0!important}
+.block-container{max-width:580px;padding:4.5rem 0.8rem 1.5rem}
+h1{font-size:1.55rem!important;line-height:1.5!important;padding:0.35rem 0!important;overflow:visible!important}
+[data-testid="stMetricLabel"]{min-height:1.6rem;overflow:visible!important}
+[data-testid="stMetricValue"]{line-height:1.5!important;padding-bottom:0.15rem}
+.stButton button{height:auto!important;white-space:normal!important}
+.stButton button p{line-height:1.5!important;overflow:visible!important}
+[data-testid="stText"]{overflow-wrap:anywhere;line-height:1.5}
 [data-testid="stVerticalBlock"]{gap:.45rem}
 [data-testid="stMetricValue"]{font-size:1.45rem}
 .stButton button{min-height:2.5rem}
@@ -269,26 +274,27 @@ key = 'page_' + view + '_' + me
 pages = max(1, (len(selected) + 2) // 3)
 page = min(st.session_state.get(key, 0), pages - 1)
 st.session_state[key] = page
-if not selected:
-    st.success('지금은 비어 있어요. 함께할 일을 등록해보세요!')
-for item in selected[page * 3:page * 3 + 3]:
-    with st.container(border=True):
-        if view == '완료 · 고마워요':
-            st.text('✅ ' + item['title'])
-            st.caption(f"{item['person']} · {item['completed'][:16].replace('T', ' ')} · ❤️ {item['gratitude']}")
-            thanked = bool(rows('SELECT 1 FROM thanks WHERE family=? AND history_id=? AND person=?', (family, item['id'], me)))
-            if st.button('❤️ 고마워요' if not thanked else '❤️ 마음 전달 완료', key=f"thanks_{item['id']}", disabled=thanked or item['person'] == me, use_container_width=True):
-                execute('INSERT OR IGNORE INTO thanks VALUES(?,?,?)', (family, item['id'], me))
-                st.rerun()
-        else:
-            text, done, menu = st.columns([4, 1.5, 1])
-            text.text(item['title'])
-            overdue = ' · 밀린 일' if item['due'] < today.isoformat() else ''
-            text.caption(f"{item['assignee']} · {item['repeat']} · {item['due'][5:]}{overdue}")
-            if done.button('완료', key=f"done_{item['id']}", disabled=item['due'] > today.isoformat(), use_container_width=True):
-                complete_dialog(item)
-            if menu.button('⋯', key=f"edit_{item['id']}", use_container_width=True):
-                edit_task(item)
+with st.container(key='task_area'):
+    if not selected:
+        st.success('지금은 비어 있어요. 함께할 일을 등록해보세요!')
+    for item in selected[page * 3:page * 3 + 3]:
+        with st.container(border=True):
+            if view == '완료 · 고마워요':
+                st.text('✅ ' + item['title'])
+                st.caption(f"{item['person']} · {item['completed'][:16].replace('T', ' ')} · ❤️ {item['gratitude']}")
+                thanked = bool(rows('SELECT 1 FROM thanks WHERE family=? AND history_id=? AND person=?', (family, item['id'], me)))
+                if st.button('❤️ 고마워요' if not thanked else '❤️ 마음 전달 완료', key=f"thanks_{item['id']}", disabled=thanked or item['person'] == me, use_container_width=True):
+                    execute('INSERT OR IGNORE INTO thanks VALUES(?,?,?)', (family, item['id'], me))
+                    st.rerun()
+            else:
+                text, done, menu = st.columns([4, 1.5, 1])
+                text.text(item['title'])
+                overdue = ' · 밀린 일' if item['due'] < today.isoformat() else ''
+                text.caption(f"{item['assignee']} · {item['repeat']} · {item['due'][5:]}{overdue}")
+                if done.button('완료', key=f"done_{item['id']}", disabled=item['due'] > today.isoformat(), use_container_width=True):
+                    complete_dialog(item)
+                if menu.button('⋯', key=f"edit_{item['id']}", use_container_width=True):
+                    edit_task(item)
 a, b, c = st.columns([1, 2, 1])
 if a.button('‹ 이전', disabled=page == 0, use_container_width=True):
     st.session_state[key] = page - 1
