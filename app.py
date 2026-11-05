@@ -230,12 +230,19 @@ def settings():
         except (ValueError, TypeError, KeyError, sqlite3.Error) as e:
             st.error(f'복원하지 못했습니다: {e}')
 
-h, gear = st.columns([5, 1])
-h.title('🏠 우리집 함께하기')
-if gear.button('⚙️', use_container_width=True):
+st.title('🏠 우리집 함께하기')
+if st.button('가족 관리 · QR 공유 · 백업', key='open_settings', use_container_width=True):
     settings()
 if not members:
-    st.info('처음 오셨나요? ⚙️에서 가족 이름을 추가하고 QR을 공유하세요.')
+    st.info('처음 오셨나요? 아래에 가족 이름을 입력하면 바로 시작할 수 있어요.')
+    with st.form('first_member_form'):
+        first_name = st.text_input('가족 이름 / 별명', max_chars=20, placeholder='예: 엄마, 아빠, 민수')
+        if st.form_submit_button('가족 등록하고 시작하기', type='primary', use_container_width=True):
+            if first_name.strip() and first_name.strip() != '누구나':
+                execute('INSERT OR IGNORE INTO members VALUES(?,?)', (family, first_name.strip()))
+                st.rerun()
+            else:
+                st.error('이름을 입력해주세요. ‘누구나’는 사용할 수 없습니다.')
     st.stop()
 
 me = st.selectbox('나는', members, key='current_member')
